@@ -1,0 +1,16 @@
+{
+    "filter_width": 2,
+    "sample_rate": 16000,
+    "dilations": [1, 2, 4, 1, 2],
+    "MFSC_channels": 60,
+    "AP_channels": 4,
+    "F0_channels": 3,           
+    "phones_channels": 34,        
+    "phone_pos_channels": 3,
+    "residual_channels": 130,
+    "dilation_channels": 130, 
+    "skip_channels": 240,
+    "use_biases": true,
+    "scalar_input": false,
+    "initial_filter_width": 10
+}
