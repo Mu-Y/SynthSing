@@ -1,7 +1,7 @@
 # SynthSing
 This is the course project for USC course EE599: Deep Learning Lab for Speech Processing. Full report is here
 
-In this project, we implemented SynthSing, a parametric singing voice synthesizer. We managed to replicate this [Neural Parametric Singing Synthesizer(NPSS)](https://www.dtic.upf.edu/~mblaauw/NPSS/) by Merlijn Blaauw and Jordi Bonada from Universitat Pompeu Fabra. Their original paper is [here](https://www.mdpi.com/2076-3417/7/12/1313). Since they did not make their code public, we implemented their paper by ourselves. 
+In this project, we implemented SynthSing, a parametric singing voice synthesizer. We managed to partially replicate this paper [A Neural Parametric Singing Synthesizer Modeling Timbre and Expression from Natural Songs](https://www.mdpi.com/2076-3417/7/12/1313) by Merlijn Blaauw and Jordi Bonada from Universitat Pompeu Fabra. Although this is not a complete replication of their paper, we believe the core modeling part, i.e. WaveNet with local conditioniong has been successfully implemented and will make it easier to replicate other modeling parts of their paper.
 
 We borrowed a lot from [this](https://github.com/ibab/tensorflow-wavenet) implementation for the Vanilla sample-to-sample WaveNet. However, since no local conditionaing(e.g. F0 and phoneme identity for melodic and phonetic modeling) was implemented, which is necessary for meaningful synthesis, **we implemented local conditioning** by ourselves. There are also many adaptions to the Vanilla WaveNet architecture, referring to NPSS paper.
 
