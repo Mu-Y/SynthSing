@@ -1,5 +1,5 @@
 # SynthSing
-This is the course project for USC course EE599: Deep Learning Lab for Speech Processing. Full report is here
+This is the course project for USC course EE599: Deep Learning Lab for Speech Processing. Full report is [here](Final_report.pdf)
 
 In this project, we implemented SynthSing, a parametric singing voice synthesizer. We managed to partially replicate this paper [A Neural Parametric Singing Synthesizer Modeling Timbre and Expression from Natural Songs](https://www.mdpi.com/2076-3417/7/12/1313) by Merlijn Blaauw and Jordi Bonada from Universitat Pompeu Fabra. Although this is not a complete replication of their paper, we believe the core modeling part, i.e. WaveNet with local conditioniong has been successfully implemented and will make it easier to replicate other modeling parts of their paper.
 
@@ -13,7 +13,7 @@ Apart from the requirements presented [here](https://github.com/ibab/tensorflow-
 ## Dataset and Pre-trained Models
 We used two datasets: 1) NIT Japanese Nursery and 2) self-curated Coldplay songs, using [GENTLE](https://github.com/lowerquality/gentle). 
 
-You can download our pre-processed(i.e. time-aligned and transformed) dataset for NIT Japanese Nursery, including MFSC, coarse coded F0, AP, etc [here](https://drive.google.com/open?id=1LQgP49jjZTb4FVEf5PevsoiBDhCIyaWp). It also contains our pre-trained models which can be directly used for generating NIT Japanese Nursery singing. After unzipping, put folder `data` under `SynthSing/`, `worked_model_mfsc` under `SynthSing/WaveNet-Harm/`, `worked_model_ap` under `SynthSing/WaveNet-Aper/` respectively.
+You can download our pre-processed(i.e. time-aligned and transformed) dataset for NIT Japanese Nursery, including MFSC, coarse coded F0, AP, etc [here](https://drive.google.com/open?id=1LQgP49jjZTb4FVEf5PevsoiBDhCIyaWp)(in .npy format). It also contains our pre-trained models which can be directly used for generating NIT Japanese Nursery singing. After unzipping, put folder `data` under `SynthSing/`, `worked_model_mfsc` under `SynthSing/WaveNet-Harm/`, `worked_model_ap` under `SynthSing/WaveNet-Aper/` respectively.
 
 ## Experiments
 Run our pre-trained models and generate MFSCs and APs:
