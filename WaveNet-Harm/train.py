@@ -19,7 +19,7 @@ from wavenet import WaveNetModel, AudioReader, optimizer_factory
 
 BATCH_SIZE = 1   # this means how many audio files? Not really
 # DATA_DIRECTORY = '../Dataset/MIR-1K/Wavfile_renaming'
-DATA_DIRECTORY = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/mfsc/"
+DATA_DIRECTORY = "../data/mfsc/"
 LOGDIR_ROOT = './logdir'
 CHECKPOINT_EVERY = 500
 NUM_STEPS = int(1e7)

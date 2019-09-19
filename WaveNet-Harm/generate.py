@@ -39,10 +39,10 @@ def get_arguments():
     parser.add_argument(
         'checkpoint', type=str, help='Which model checkpoint to generate from')
     parser.add_argument(
-        '--samples',
+        '--frames',
         type=int,
         default=SAMPLES,
-        help='How many waveform samples to generate')
+        help='How many frames to generate')
     parser.add_argument(
         '--temperature',
         type=_ensure_positive_float,
@@ -59,6 +59,15 @@ def get_arguments():
         type=str,
         default=WAVENET_PARAMS,
         help='JSON file with the network parameters')
+    parser.add_argument(
+        '--clip_id',
+        type=str,
+        default=None,
+        help='the target audio segment id in the NIT dataset to generate, only set when scramble is not set.')
+    parser.add_argument(
+        '--scramble',
+        action='store_true',
+        help='Use scramble msfc, ap, f0 and phonemes sequence for local conditioning in generation.')
     parser.add_argument(
         '--wav_out_path',
         type=str,
@@ -172,13 +181,13 @@ def swap_chunk(input, first_chunk, second_chunk):
     return output
 
 def load_lc(clip_id=None, scramble=False):
-    mfsc_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/mfsc/"
-    ap_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/ap/"
-    f0_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/f0coded/"
-    prev_phone_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phones/prev/"
-    cur_phone_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phones/current/"
-    next_phone_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phones/next/"
-    phone_pos_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phones/pos/"
+    mfsc_path = "../data/mfsc/"
+    ap_path = "../data/ap/"
+    f0_path = "../data/f0coded/"
+    prev_phone_path = "../data/phones/prev/"
+    cur_phone_path = "../data/phones/current/"
+    next_phone_path = "../data/phones/next/"
+    phone_pos_path = "../data/phones/pos/"
 
     filename = "nitech_jp_song070_f001_"
 
@@ -193,11 +202,11 @@ def load_lc(clip_id=None, scramble=False):
 
 
     if scramble:
-        F0 = np.load("/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/F0_scramble.npy")
-        prev_phone = np.load("/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/new_phones/prev/concatenated.npy")
-        current_phone = np.load("/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/new_phones/current/concatenated.npy")
-        next_phone = np.load("/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/new_phones/next/concatenated.npy")
-        phone_pos = np.load("/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phone_scramble.npy")[:, -3:]
+        F0 = np.load("../data/F0_scramble.npy")
+        prev_phone = np.load("../data/new_phones/prev/concatenated.npy")
+        current_phone = np.load("../data/new_phones/current/concatenated.npy")
+        next_phone = np.load("../data/new_phones/next/concatenated.npy")
+        phone_pos = np.load("../data/phone_scramble.npy")[:, -3:]
         concat = np.concatenate((F0, prev_phone, current_phone, next_phone, phone_pos), axis=-1)
 
     return concat
@@ -266,7 +275,7 @@ def main():
         waveform = np.zeros((net.receptive_field - 1, MFSC_channels))
         waveform = np.append(waveform, np.random.randn(1, MFSC_channels), axis=0)
 
-        lc_array = load_lc(scramble=True) # clip_id:[003, 004, 007, 010, 012 ...]
+        lc_array = load_lc(clip_id=args.clip_id, scramble=args.scramble) # clip_id:[003, 004, 007, 010, 012 ...]
         lc_array = np.pad(lc_array, ((net.receptive_field, 0), (0, 0)), 'constant', constant_values=((0, 0),(0,0)))
 
     if args.fast_generation and args.wav_seed:
@@ -287,7 +296,7 @@ def main():
         print('Done.')
 
     last_sample_timestamp = datetime.now()
-    for step in range(args.samples):
+    for step in range(args.frames):
         if args.fast_generation:
             outputs = [next_sample]
             outputs.extend(net.push_ops)
@@ -309,7 +318,7 @@ def main():
         current_sample_timestamp = datetime.now()
         time_since_print = current_sample_timestamp - last_sample_timestamp
         if time_since_print.total_seconds() > 1.:
-            print('Frame {:3<d}/{:3<d}'.format(step + 1, args.samples),
+            print('Frame {:3<d}/{:3<d}'.format(step + 1, args.frames),
                   end='\r')
             last_sample_timestamp = current_sample_timestamp
 

@@ -21,8 +21,8 @@ import numpy as np
 from wavenet import WaveNetModel, AudioReader, optimizer_factory
 
 BATCH_SIZE = 1   
-DATA_DIRECTORY = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/mfsc/"
-LOGDIR_ROOT = './logdir_lr0005'
+DATA_DIRECTORY = "../data/mfsc/"
+LOGDIR_ROOT = './logdir'
 CHECKPOINT_EVERY = 500
 NUM_STEPS = int(1e7)
 LEARNING_RATE = 0.0005

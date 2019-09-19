@@ -14,7 +14,7 @@ from wavenet import WaveNetModel, mu_law_decode, mu_law_encode, audio_reader
 
 SAMPLES = 16000
 TEMPERATURE = 1.0
-LOGDIR = './logdir_lr00005'
+LOGDIR = './logdir'
 WAVENET_PARAMS = './wavenet_params.json'
 SAVE_EVERY = 20 #100
 SILENCE_THRESHOLD = 0.1
@@ -39,10 +39,10 @@ def get_arguments():
     parser.add_argument(
         'checkpoint', type=str, help='Which model checkpoint to generate from')
     parser.add_argument(
-        '--samples',
+        '--frames',
         type=int,
         default=SAMPLES,
-        help='How many waveform samples to generate')
+        help='How many frames to generate')
     parser.add_argument(
         '--temperature',
         type=_ensure_positive_float,
@@ -59,6 +59,15 @@ def get_arguments():
         type=str,
         default=WAVENET_PARAMS,
         help='JSON file with the network parameters')
+    parser.add_argument(
+        '--clip_id',
+        type=str,
+        default=None,
+        help='the target audio segment id in the NIT dataset to generate, only set when scramble is not set.')
+    parser.add_argument(
+        '--scramble',
+        action='store_true',
+        help='Use scramble msfc, ap, f0 and phonemes sequence for local conditioning in generation.')
     parser.add_argument(
         '--wav_out_path',
         type=str,
@@ -173,17 +182,17 @@ def swap_chunk(input, first_chunk, second_chunk):
 
 def load_lc(clip_id=None, scramble=False):
 
-    f0_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/f0coded/"
-    prev_phone_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phones/prev/"
-    cur_phone_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phones/current/"
-    next_phone_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phones/next/"
-    phone_pos_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phones/pos/"
+    f0_path = "../data/f0coded/"
+    prev_phone_path = "../data/phones/prev/"
+    cur_phone_path = "../data/phones/current/"
+    next_phone_path = "../data/phones/next/"
+    phone_pos_path = "../data/phones/pos/"
 
     filename = "nitech_jp_song070_f001_"
     if clip_id:
         F0 = np.load(f0_path + filename + clip_id + ".npy")
         # mfsc = np.load(mfsc_path + filename + clip_id + ".npy")
-        mfsc = np.load("/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Wavenet/generated_004_mfsc.npy")[20:]   # load submodel-generated mfsc
+        mfsc = np.load("../WaveNet-Harm/generated_{}.npy".format(clip_id))[20:]   # load submodel-generated mfsc
         prev_phone = np.load(prev_phone_path + filename + clip_id + ".npy")
         cur_phone = np.load(cur_phone_path + filename + clip_id + ".npy")
         next_phone = np.load(next_phone_path + filename + clip_id + ".npy")
@@ -192,12 +201,12 @@ def load_lc(clip_id=None, scramble=False):
         concat = np.concatenate((F0, prev_phone, cur_phone, next_phone, phone_pos), axis=-1)
 
     if scramble:
-        mfsc = np.load("/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Wavenet/generated_scramble.npy")[20:]
-        F0 = np.load("/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/F0_scramble.npy")
-        prev_phone = np.load("/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/new_phones/prev/concatenated.npy")
-        current_phone = np.load("/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/new_phones/current/concatenated.npy")
-        next_phone = np.load("/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/new_phones/next/concatenated.npy")
-        phone_pos = np.load("/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phone_scramble.npy")[:, -3:]
+        mfsc = np.load("../WaveNet-Harm/generated_scramble_mfsc.npy")[20:]
+        F0 = np.load("../data/F0_scramble.npy")
+        prev_phone = np.load("../data/new_phones/prev/concatenated.npy")
+        current_phone = np.load("../data/new_phones/current/concatenated.npy")
+        next_phone = np.load("../data/new_phones/next/concatenated.npy")
+        phone_pos = np.load("../data/phone_scramble.npy")[:, -3:]
         concat = np.concatenate((F0, prev_phone, current_phone, next_phone, phone_pos), axis=-1)
     return concat, mfsc
 
@@ -268,7 +277,7 @@ def main():
         waveform = np.zeros((net.receptive_field - 1, AP_channels + MFSC_channels))
         waveform = np.append(waveform, np.random.randn(1, AP_channels + MFSC_channels), axis=0)
 
-        lc_array, mfsc_array = load_lc(scramble=True) # clip_id:[003, 004, 007, 010, 012 ...]
+        lc_array, mfsc_array = load_lc(clip_id=args.clip_id, scramble=args.scramble) # clip_id:[003, 004, 007, 010, 012 ...]
         lc_array = np.pad(lc_array, ((net.receptive_field, 0), (0, 0)), 'constant', constant_values=((0, 0),(0,0)))
         mfsc_array = np.pad(mfsc_array, ((net.receptive_field, 0), (0, 0)), 'constant', constant_values=((0, 0),(0,0)))
 
@@ -290,7 +299,7 @@ def main():
         print('Done.')
 
     last_sample_timestamp = datetime.now()
-    for step in range(args.samples):
+    for step in range(args.frames):
         if args.fast_generation:
             outputs = [next_sample]
             outputs.extend(net.push_ops)
@@ -316,7 +325,7 @@ def main():
         current_sample_timestamp = datetime.now()
         time_since_print = current_sample_timestamp - last_sample_timestamp
         if time_since_print.total_seconds() > 1.:
-            print('Frame {:3<d}/{:3<d}'.format(step + 1, args.samples),
+            print('Frame {:3<d}/{:3<d}'.format(step + 1, args.frames),
                   end='\r')
             last_sample_timestamp = current_sample_timestamp
 

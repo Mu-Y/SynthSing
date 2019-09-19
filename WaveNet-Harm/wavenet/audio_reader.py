@@ -9,13 +9,13 @@ import numpy as np
 import tensorflow as tf
 
 FILE_PATTERN = r'([a-z]+)_([a-z]+)_song([0-9]+)_f([0-9]+)_([0-9]+)\.npy'########################################################
-mfsc_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/mfsc/"
-ap_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/ap/"
-f0_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/f0coded/"
-prev_phone_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phones/prev/"
-cur_phone_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phones/current/"
-next_phone_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phones/next/"
-phone_pos_path = "/Users/muyang/Desktop/EE599_Speech/2018_synth_sing_proj/Dataset/HTS-demo_NIT-SONG070-F001/data/phones/pos/"
+mfsc_path = "../data/mfsc/"
+ap_path = "../data/ap/"
+f0_path = "../data/f0coded/"
+prev_phone_path = "../data/phones/prev/"
+cur_phone_path = "../data/phones/current/"
+next_phone_path = "../data/phones/next/"
+phone_pos_path = "../data/phones/pos/"
 
 
 def get_category_cardinality(files):
