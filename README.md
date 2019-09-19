@@ -7,23 +7,50 @@ We borrowed a lot from [this](https://github.com/ibab/tensorflow-wavenet) implem
 
 **Long story short**, our model makes frame-to-frame predictions on 60-dimensional MFSCs coefficients and 4-dimensional Aperiodicity coefficients, using F0(coarse coded), phoneme identity(one-hot coded) and normalized phoneme position(coarse coded) as local control inputs and singer identity as global control inputs. Then we feed generated MFSCs and APs, as well as true F0 into WORLD vocoder to synthesize audio.
 
-### Adaption to the original NPSS paper
-The system we originally intended to implement contained all three models of NPSS - the timbre model, pitch model and phonetic timing model. However, due to the challenges of implementing a WaveNet model with local conditioning and constructing a dataset from scratch, we were only able to build and train the timbre model and its two submodels - the harmonic model and aperiodic model. As we used F0 values from a recording, we did not need to implement the voiced/unvoiced submodel.
+## Prerequisite
+Apart from the requirements presented [here](https://github.com/ibab/tensorflow-wavenet), you also need `pysptk` and `pyworld` for audio resynthsis and data pre-processing.
 
-However, **we incorporated global conditioning in our WaveNet architecture**, which was not mentioned in the vanilla NPSS paper. This gives our model the potential for transfer learning task - given data for several new singers, our model is able to synthesize singing for those singers, or even model cross-singer singing voice, e.g. having “Taylor Swift” sing like “Ed Sheeran” given a few lyrics.
+## Dataset and Pre-trained Models
+We used two datasets: 1) NIT Japanese Nursery and 2) self-curated Coldplay songs, using [GENTLE](https://github.com/lowerquality/gentle). 
 
-## Dataset
-We trained our model on two datasets: 
-- [NIT Japanese Nursery](http://hts.sp.nitech.ac.jp/archives/2.3/HTS-demo_NIT-SONG070-F001.tar.bz2). This is what was used in NPSS paper. We used this because this is the only publicly available phoneme-level aligned dataset that we found.
-- Our self-created dataset - a collection of 10 Coldplay songs with isolated lead vocal tracks downloaded from YouTube. The phoneme-level alignment were generated from the force aligner [GENTLE](https://github.com/lowerquality/gentle). Due to the limitation of GENTLE's recognition capability and the available Acapella audio, this dataset is relatively small.
+You can download our pre-processed(i.e. time-aligned and transformed) dataset for NIT Japanese Nursery, including MFSC, coarse coded F0, AP, etc [here](https://drive.google.com/open?id=1LQgP49jjZTb4FVEf5PevsoiBDhCIyaWp). It also contains our pre-trained models which can be directly used for generating NIT Japanese Nursery singing. After unzipping, put folder `data` under `SynthSing/`, `worked_model_mfsc` under `SynthSing/WaveNet-Harm/`, `worked_model_ap` under `SynthSing/WaveNet-Aper/` respectively.
+
+## Experiments
+Run our pre-trained models and generate MFSCs and APs:
+```
+# Generate the first 3200 frames of MFSCs using the pre-trained Harmonic model 
+# for the target clip nitech_jp_song070_f001_004, using reference F0 and phonemes. 
+SynthSing$ cd WaveNet-Harm
+WaveNet-Harm$ python generate.py --frames 3200 --clip_id 004 --wav_out_path generated_004.npy --gc_channels=32 --gc_cardinality=2 --gc_id=1 ./worked_model_mfsc/model.ckpt-1894500
+
+# Generate the first 3200 frames of APs using the pre-trained Aperiodicity model 
+# for the target clip nitech_jp_song070_f001_004, using reference F0 and phonemes, as well as generated MFSCs. 
+SynthSing$ cd WaveNet-Aper
+WaveNet-Aper$ python generate.py --frames 3200 --clip_id 004 --wav_out_path generated_004.npy --gc_channels=32 --gc_cardinality=2 --gc_id=1 ./worked_model_ap/model.ckpt-478500
+
+# resynthesize audio using the generated MFSCs and APs, as well as reference F0 via WORLD vocoder
+SynthSing$ python resynth.py --mfsc_file WaveNet-Harm/generated_004.npy --f0_file data/f0ref/nitech_jp_song070_f001_004.npy --ap_file WaveNet-Aper/generated_004.npy --wave_out_path resynth_004.wav
+
+# For our hand-crafted scrambled sequence
+WaveNet-Harm$ python generate.py --frames 1770 --scramble --wav_out_path generated_scramble_mfsc.npy --gc_channels=32 --gc_cardinality=2 --gc_id=1 ./worked_model_mfsc/model.ckpt-1894500
+WaveNet-Aper$ python generate.py --frames 1770 --scramble --wav_out_path generated_scramble_ap.npy --gc_channels=32 --gc_cardinality=2 --gc_id=1 ./worked_model_ap/model.ckpt-478500
+SynthSing$ python resynth.py --mfsc_file WaveNet-Harm/generated_scramble_mfsc.npy --f0_file data/F0ref_scramble.npy --ap_file WaveNet-Aper/generated_scramble_ap.npy --wav_out_path resynth_scramble.wav
+```
+Train new models:
+```
+# Same command for both Harmonic and Aperiodicity model
+python train.py --gc_channels=32
+```
+
 
 ## Results (audio samples)
 - Trained on NIT data. Replicating results from the NIT dataset. We took one of the training recordings as target. Resynthesized using true F0, generated MFSC and AP.
   - [Target](https://soundcloud.com/mu-yang-974011976/hit-004_orignal?in=mu-yang-974011976/sets/results-for-synthsing)
   - [Synthesized](https://soundcloud.com/mu-yang-974011976/hit_004_synthesized?in=mu-yang-974011976/sets/results-for-synthsing)
-- Trained on NIT data. Generating previously unseen sequences. By splicing together random clips from the NIT recordings and doing a similar concatenation of the corresponding F0 and phonemes for each audio clip, we created control input sequences that the model had not seen before. Using the grafted control inputs, we generated MFSCs and AP coefficients from the coarse-coded F0s and phonetic timings and then re-synthesized the audio via WORLD.
+- Trained on NIT data. Generating previously unseen sequences by splicing together random clips from the NIT recordings and doing a similar concatenation of the corresponding F0 and phonemes for each audio clip.
   - [Target](https://soundcloud.com/mu-yang-974011976/hit_scramble_original?in=mu-yang-974011976/sets/results-for-synthsing)
   - [Synthesized](https://soundcloud.com/mu-yang-974011976/hit_scramble_synthesized?in=mu-yang-974011976/sets/results-for-synthsing)
 - Trained on self-created dataset. we resynthesized recordings in the Coldplay dataset using true F0 and AP, and MFSCs generated by the harmonic submodel.
   - [Target](https://soundcloud.com/mu-yang-974011976/coldplay-song02-01-007?in=mu-yang-974011976/sets/results-for-synthsing)
   - [Synthesized](https://soundcloud.com/mu-yang-974011976/coldplay_007_synthesized?in=mu-yang-974011976/sets/results-for-synthsing)
+
